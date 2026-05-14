@@ -1,7 +1,7 @@
 import { useState, useCallback, lazy, Suspense } from 'react'
 import { useCartStore } from '../store/cartStore'
-import type { Material, Color } from '../types'
-import { MATERIAL_MULTIPLIER } from '../types'
+import type { Material, Color, Quality, Finish } from '../types'
+import { MATERIAL_MULTIPLIER, QUALITY_MULTIPLIER, QUALITY_LAYER, FINISH_MULTIPLIER } from '../types'
 import { COLORS } from '../data/products'
 import { useNavigate } from 'react-router-dom'
 
@@ -17,6 +17,9 @@ export default function Upload() {
   const [material, setMaterial] = useState<Material>('PLA')
   const [color, setColor] = useState<Color>(COLORS[0])
   const [infill, setInfill] = useState(20)
+  const [quality, setQuality] = useState<Quality>('Standard')
+  const [finish, setFinish] = useState<Finish>('Surowy')
+  const [rush, setRush] = useState(false)
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
 
@@ -39,10 +42,13 @@ export default function Upload() {
     if (f) handleFile(f)
   }, [])
 
-  // Wycena: szacujemy ~1 zł/cm³ x wypełnienie + baza
   const estimatedVolume = file ? Math.max(10, Math.min(500, file.size / 5000)) : 0
   const basePrice = Math.round(estimatedVolume * 0.8)
-  const price = file ? Math.round(basePrice * MATERIAL_MULTIPLIER[material] * (1 + infill / 200)) : 0
+  const price = file
+    ? Math.round(basePrice * MATERIAL_MULTIPLIER[material] * QUALITY_MULTIPLIER[quality] * FINISH_MULTIPLIER[finish] * (1 + infill / 200) * (rush ? 1.5 : 1))
+    : 0
+  const estimatedHours = file ? Math.max(1, Math.round(estimatedVolume / 30 * QUALITY_MULTIPLIER[quality] * (1 + infill / 100))) : 0
+  const estimatedGrams = file ? Math.round(estimatedVolume * 1.2 * (infill / 100 + 0.3)) : 0
 
   const handleAdd = () => {
     if (!file) return
@@ -62,6 +68,9 @@ export default function Upload() {
       material,
       color,
       infill,
+      quality,
+      finish,
+      rush,
       uploadedFile: file,
       uploadedFileName: file.name,
       price,
@@ -77,8 +86,8 @@ export default function Upload() {
         <p className="text-gray-500 mb-8">Obsługiwane formaty: <strong>STL</strong>, <strong>OBJ</strong></p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Upload */}
-          <div className="space-y-6">
+          {/* Upload + konfiguracja */}
+          <div className="space-y-5">
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
@@ -101,15 +110,14 @@ export default function Upload() {
                   <p className="text-sm text-gray-400 mt-1">STL lub OBJ, maks. 50 MB</p>
                 </div>
               )}
-              <input
-                id="file-input" type="file" accept=".stl,.obj" className="hidden"
-                onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
-              />
+              <input id="file-input" type="file" accept=".stl,.obj" className="hidden"
+                onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
             </div>
 
-            {/* Konfiguracja */}
             {file && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-5">
+
+                {/* Materiał */}
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">Materiał</label>
                   <div className="flex gap-2 flex-wrap">
@@ -122,6 +130,36 @@ export default function Upload() {
                   </div>
                 </div>
 
+                {/* Jakość */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Jakość druku</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['Szkic', 'Standard', 'Wysoka', 'Ultra'] as Quality[]).map(q => (
+                      <button key={q} onClick={() => setQuality(q)}
+                        className={`px-3 py-2 rounded-lg text-sm border transition-colors text-left ${
+                          quality === q ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
+                        }`}>
+                        <div className="font-medium">{q}</div>
+                        <div className={`text-xs ${quality === q ? 'text-blue-200' : 'text-gray-400'}`}>{QUALITY_LAYER[q]}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Wykończenie */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Wykończenie powierzchni</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {(['Surowy', 'Szlifowany', 'Malowany'] as Finish[]).map(f => (
+                      <button key={f} onClick={() => setFinish(f)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          finish === f ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
+                        }`}>{f}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Kolor */}
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">Kolor: <span className="font-normal text-gray-500">{color.name}</span></label>
                   <div className="flex gap-2 flex-wrap">
@@ -133,14 +171,47 @@ export default function Upload() {
                   </div>
                 </div>
 
+                {/* Wypełnienie */}
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Wypełnienie: {infill}%</label>
+                  <label className="text-sm font-semibold text-gray-700 mb-1 block">Wypełnienie: {infill}%</label>
                   <input type="range" min={5} max={100} step={5} value={infill}
                     onChange={e => setInfill(Number(e.target.value))}
                     className="w-full accent-blue-600" />
+                  <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+                    <span>Lekkie 5%</span><span>Standardowe 20%</span><span>Pełne 100%</span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
+                {/* Ekspres */}
+                <button onClick={() => setRush(!rush)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${
+                    rush ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 bg-white hover:border-yellow-300'
+                  }`}>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-gray-800">⚡ Ekspresowa realizacja 24h</div>
+                    <div className="text-xs text-gray-500">Priorytetowy druk, wysyłka następnego dnia</div>
+                  </div>
+                  <div className={`text-sm font-bold ${rush ? 'text-yellow-600' : 'text-gray-400'}`}>+50%</div>
+                </button>
+
+                {/* Estymaty */}
+                <div className="grid grid-cols-3 gap-2 py-2 border-t border-gray-100">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-400">Czas druku</div>
+                    <div className="text-sm font-bold text-gray-800">~{estimatedHours}h</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-400">Filament</div>
+                    <div className="text-sm font-bold text-gray-800">~{estimatedGrams}g</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-400">Warstwa</div>
+                    <div className="text-sm font-bold text-gray-800">{QUALITY_LAYER[quality]}</div>
+                  </div>
+                </div>
+
+                {/* Ilość i cena */}
+                <div className="flex items-center gap-4 pt-1 border-t border-gray-100">
                   <div>
                     <label className="text-sm font-semibold text-gray-700 mb-2 block">Ilość</label>
                     <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
@@ -170,25 +241,22 @@ export default function Upload() {
           <div>
             <div className="bg-gray-900 rounded-2xl overflow-hidden">
               <Suspense fallback={<div className="h-80 flex items-center justify-center text-gray-400 text-sm">Ładowanie podglądu...</div>}>
-                <ModelViewer
-                  color={color.hex}
-                  modelUrl={fileUrl || undefined}
-                  modelType={fileType || undefined}
-                  height="400px"
-                />
+                <ModelViewer color={color.hex} modelUrl={fileUrl || undefined} modelType={fileType || undefined} height="400px" />
               </Suspense>
             </div>
             <p className="text-center text-xs text-gray-400 mt-2">
               {fileUrl ? 'Podgląd Twojego modelu — obróć myszką' : 'Wgraj plik, aby zobaczyć podgląd 3D'}
             </p>
 
-            <div className="mt-6 bg-blue-50 rounded-xl p-4 border border-blue-100">
+            <div className="mt-5 bg-blue-50 rounded-xl p-4 border border-blue-100">
               <h3 className="font-semibold text-blue-900 mb-2 text-sm">ℹ️ Jak wyceniamy?</h3>
               <ul className="text-xs text-blue-700 space-y-1">
-                <li>• Cena bazowa zależy od rozmiaru pliku (objętości modelu)</li>
-                <li>• Materiał Resin ×2.0, ABS ×1.2, PETG ×1.15, PLA ×1.0</li>
+                <li>• Cena bazowa zależy od objętości modelu</li>
+                <li>• Materiał: Resin ×2.0, ABS ×1.2, PETG ×1.15, PLA ×1.0</li>
+                <li>• Jakość: Ultra ×2.2, Wysoka ×1.5, Standard ×1.0, Szkic ×0.8</li>
+                <li>• Wykończenie: Malowany ×2.0, Szlifowany ×1.4, Surowy ×1.0</li>
                 <li>• Wyższe wypełnienie = więcej materiału = wyższa cena</li>
-                <li>• Ostateczna wycena po weryfikacji pliku przez nasz zespół</li>
+                <li>• Ekspres 24h = +50% do ceny</li>
               </ul>
             </div>
           </div>

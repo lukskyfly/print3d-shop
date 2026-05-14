@@ -41,17 +41,32 @@ export default function Cart() {
                 {item.uploadedFileName && (
                   <p className="text-xs text-gray-400 mt-0.5">Plik: {item.uploadedFileName}</p>
                 )}
-                <div className="flex gap-3 mt-2 flex-wrap">
+                <div className="flex gap-2 mt-2 flex-wrap">
                   <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
-                    Materiał: {item.material}
+                    {item.material}
                   </span>
                   <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 flex items-center gap-1">
                     <span className="w-3 h-3 rounded-full inline-block border border-gray-300" style={{ backgroundColor: item.color.hex }} />
                     {item.color.name}
                   </span>
                   <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
-                    Wypełnienie: {item.infill}%
+                    {item.infill}% wypełnienia
                   </span>
+                  {item.quality && (
+                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                      {item.quality}
+                    </span>
+                  )}
+                  {item.finish && item.finish !== 'Surowy' && (
+                    <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">
+                      {item.finish}
+                    </span>
+                  )}
+                  {item.rush && (
+                    <span className="text-xs bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
+                      ⚡ Ekspres 24h
+                    </span>
+                  )}
                 </div>
               </div>
 
