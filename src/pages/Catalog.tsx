@@ -75,7 +75,7 @@ export default function Catalog() {
                       <span className="text-xl font-bold text-blue-600 ml-1">{product.basePrice} zł</span>
                     </div>
                     <div className="flex gap-1">
-                      {product.colors.slice(0, 5).map(c => (
+                      {product.colors.slice(0, 8).map(c => (
                         <div
                           key={c.hex}
                           className="w-4 h-4 rounded-full border border-gray-200"
@@ -83,8 +83,8 @@ export default function Catalog() {
                           title={c.name}
                         />
                       ))}
-                      {product.colors.length > 5 && (
-                        <span className="text-xs text-gray-400 ml-1">+{product.colors.length - 5}</span>
+                      {product.colors.length > 8 && (
+                        <span className="text-xs text-gray-400 ml-1">+{product.colors.length - 8}</span>
                       )}
                     </div>
                   </div>

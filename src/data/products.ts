@@ -4,11 +4,23 @@ export const COLORS = [
   { name: 'Biały', hex: '#FFFFFF' },
   { name: 'Czarny', hex: '#1a1a1a' },
   { name: 'Szary', hex: '#6B7280' },
+  { name: 'Srebrny', hex: '#C0C0C0' },
   { name: 'Czerwony', hex: '#EF4444' },
+  { name: 'Ciemnoczerwony', hex: '#991B1B' },
+  { name: 'Różowy', hex: '#EC4899' },
+  { name: 'Fioletowy', hex: '#8B5CF6' },
+  { name: 'Granatowy', hex: '#1E3A8A' },
   { name: 'Niebieski', hex: '#3B82F6' },
+  { name: 'Błękitny', hex: '#38BDF8' },
+  { name: 'Turkusowy', hex: '#06B6D4' },
   { name: 'Zielony', hex: '#10B981' },
+  { name: 'Ciemnozielony', hex: '#166534' },
+  { name: 'Limonkowy', hex: '#84CC16' },
   { name: 'Żółty', hex: '#F59E0B' },
   { name: 'Pomarańczowy', hex: '#F97316' },
+  { name: 'Brązowy', hex: '#92400E' },
+  { name: 'Beżowy', hex: '#D4B896' },
+  { name: 'Złoty', hex: '#D4AF37' },
 ]
 
 export const PRODUCTS: Product[] = [
